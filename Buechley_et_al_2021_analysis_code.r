@@ -24,6 +24,7 @@ select<-dplyr::select
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 ### download this file from "https:\\github.com\\steffenoppel\\vultures\\EgyptianVulture_data.RData",destfile="EgyptianVulture_data.RData"
+setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_press\\EGVU_SurvivalComparison\\EGVUsurvival")
 load("EgyptianVulture_data.RData")
 
 
