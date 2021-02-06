@@ -4,12 +4,13 @@
 #
 ##########################################################################
 # Citation:
-
+# Buechley, E., Oppel, S., Efrat, R. et al. 2021.
+# Differential survival throughout the full annual cycle of a migratory bird presents a life history trade-off.
+# Journal of Animal Ecology.
 
 
 # written by Steffen Oppel, finalised 5 February 2021
-# data preparation by Evan Buechley, Ron Efrat, Louis Phipps, and Evan Buechley
-
+# data preparation by Evan Buechley, Ron Efrat, and Steffen Oppel
 
 library(jagsUI)
 library(tidyverse)
@@ -235,9 +236,9 @@ parameters.telemetry <- c("p.seen.alive","base.obs","base.fail","base.recover","
                           "b.phi.lat1","b.phi.lat2")
 
 # MCMC settings
-ni <- 25000
-nt <- 5
-nb <- 5000
+ni <- 25
+nt <- 1
+nb <- 5
 nc <- 3
 
 
@@ -256,7 +257,7 @@ inits.telemetry <- function(){list(z = z.telemetry,
 #### TOP MODEL WITH SIMPLE 2 LATITUDINAL BAND
 
 FINAL_MODEL <- jags(INPUT.telemetry, inits.telemetry, parameters.telemetry,
-                                     "EGVU_mig_lat_survival_model.jags",
+                                     "C:\\STEFFEN\\MANUSCRIPTS\\in_press\\EGVU_SurvivalComparison\\EGVUsurvival\\EGVU_mig_lat_survival_model.jags",
                                      n.chains = nc, n.thin = nt, n.burnin = nb, n.cores=nc, parallel=T, n.iter = ni)
 
 
@@ -274,37 +275,9 @@ FINAL_MODEL <- jags(INPUT.telemetry, inits.telemetry, parameters.telemetry,
 ## LAT: 0=north, 1=Africa
 ## summarise annual survival by using 10*stationary, 1*spring mig and 1*fall 
 
-### PLOT PARAMETERS ON LOGIT SCALE
+### EXTRACT PARAMETER ESTIMATES
 out10<-as.data.frame(FINAL_MODEL$summary)
 out10$parameter<-row.names(FINAL_MODEL$summary)
-fwrite(out10,"EGVU_REV1_FINAL_parameter_estimates.csv")
-
-out10 %>% filter(grepl("b.phi",parameter)) %>%
-  mutate(parameter=ifelse(parameter=="b.phi.mig","migration",parameter)) %>%
-  mutate(parameter=ifelse(parameter=="b.phi.age","age",parameter)) %>%
-  mutate(parameter=ifelse(parameter=="b.phi.pop","western Europe",parameter)) %>%
-  mutate(parameter=ifelse(parameter=="b.phi.capt","captive-reared",parameter)) %>%
-  mutate(parameter=ifelse(parameter=="b.phi.lat1","south of 25 N",parameter)) %>%
-  ggplot()+
-  geom_point(aes(x=parameter, y=mean))+
-  geom_errorbar(aes(x=parameter, ymin=`2.5%`, ymax=`97.5%`), width=.1) +
-  geom_hline(aes(yintercept=0), colour="darkgrey") +
-  
-  ## format axis ticks
-  xlab("Parameter") +
-  scale_y_continuous(name="estimate (logit scale)", limits=c(-2,2), breaks=seq(-2,2,0.5)) +
-  
-  ## beautification of the axes
-  theme(panel.background=element_rect(fill="white", colour="black"), panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.text.y=element_text(size=18, color="black"),
-        axis.text.x=element_text(size=12, color="black",angle=45, vjust = 1, hjust=1), 
-        axis.title=element_text(size=18), 
-        strip.text.x=element_text(size=18, color="black"), 
-        strip.background=element_rect(fill="white", colour="black"))
-
-ggsave("EGVU_parameter_estimates_FINAL_REV1.jpg", height=7, width=10)
-
-
 
 ### PREPARE RAW MCMC OUTPUT
 parmcols<-dimnames(FINAL_MODEL$samples[[1]])[[2]]
@@ -368,7 +341,6 @@ for(s in 1:nrow(MCMCout)) {
 TABLE2<-  MCMCpred %>% 
   
   ### ANNOTATE GROUPS
-  #mutate(Ageclass=ifelse(age==54,"adult","juvenile")) %>%
   mutate(Origin=ifelse(capt==0,"wild","captive")) %>%
   
   ### CALCULATE CREDIBLE INTERVALS
@@ -409,7 +381,7 @@ for(s in 1:nrow(MCMCout)) {
 }
 
 
-### CALCULATE PREDICTED SURVIVAL BASED ON FINAL MODEL
+### CALCULATE PREDICTED SURVIVAL AND CREATE PLOT
 
 MCMCpred %>% group_by(age,mig, lat) %>%
   summarise(med.surv=quantile(logit.surv,0.5),lcl.surv=quantile(logit.surv,0.025),ucl.surv=quantile(logit.surv,0.975)) %>%
@@ -421,7 +393,6 @@ MCMCpred %>% group_by(age,mig, lat) %>%
   
   ### ANNOTATE GROUPS
   mutate(Season=ifelse(lat==1,"south of 25°N",ifelse(mig==1,"migration","north of 25°N"))) %>%
-  #mutate(stage=ifelse(mig==0,"stationary","migrating")) %>%
   ggplot()+
   geom_ribbon(aes(x=age, ymin=lcl, ymax=ucl, fill=Season), alpha=0.2) +   ##, type=Origin
   geom_line(aes(x=age, y=surv, color=Season),size=2)+     ## , linetype=Origin
@@ -442,19 +413,3 @@ MCMCpred %>% group_by(age,mig, lat) %>%
         legend.position=c(0.8,0.2), 
         strip.text=element_text(size=18, color="black"), 
         strip.background=element_rect(fill="white", colour="black"))
-
-
-Fig2data<-MCMCpred %>% group_by(age,mig, lat, pop, capt) %>%
-  summarise(med.surv=quantile(logit.surv,0.5),lcl.surv=quantile(logit.surv,0.025),ucl.surv=quantile(logit.surv,0.975)) %>%
-  filter(!(mig==1 & lat==1)) %>%
-  filter(!(age<19 & lat==1)) %>%
-  
-  ### BACKTRANSFORM TO NORMAL SCALE
-  mutate(surv=plogis(med.surv),lcl=plogis(lcl.surv),ucl=plogis(ucl.surv)) %>%
-  
-  ### ANNOTATE GROUPS
-  mutate(Origin=ifelse(capt==0,"wild","captive")) %>%
-  mutate(Population=ifelse(pop==1,"western Europe","central and east")) %>%
-  mutate(Season=ifelse(lat==1,"south of 25°N",ifelse(mig==1,"migration","north of 25°N"))) %>%
-  ungroup() %>%
-  select(Population, Origin, Season, age, surv,lcl,ucl)
