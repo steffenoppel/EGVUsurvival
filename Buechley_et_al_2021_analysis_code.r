@@ -236,9 +236,9 @@ parameters.telemetry <- c("p.seen.alive","base.obs","base.fail","base.recover","
                           "b.phi.lat1","b.phi.lat2")
 
 # MCMC settings
-ni <- 25
-nt <- 1
-nb <- 5
+ni <- 25000
+nt <- 5
+nb <- 5000
 nc <- 3
 
 
