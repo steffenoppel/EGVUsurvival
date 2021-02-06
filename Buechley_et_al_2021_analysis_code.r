@@ -24,8 +24,8 @@ select<-dplyr::select
 # LOAD DATA FROM ASSEMBLED R WORKSPACE
 #~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-### download this file from "https:\\github.com\\steffenoppel\\vultures\\EgyptianVulture_data.RData",destfile="EgyptianVulture_data.RData"
-setwd("C:\\STEFFEN\\MANUSCRIPTS\\in_press\\EGVU_SurvivalComparison\\EGVUsurvival")
+### download this file from "https://github.com/steffenoppel/EGVUsurvival/blob/master/EgyptianVulture_data.RData"
+setwd("C:\\specify_directory_here")  ## specify directory
 load("EgyptianVulture_data.RData")
 
 
@@ -257,7 +257,7 @@ inits.telemetry <- function(){list(z = z.telemetry,
 #### TOP MODEL WITH SIMPLE 2 LATITUDINAL BAND
 
 FINAL_MODEL <- jags(INPUT.telemetry, inits.telemetry, parameters.telemetry,
-                                     "C:\\STEFFEN\\MANUSCRIPTS\\in_press\\EGVU_SurvivalComparison\\EGVUsurvival\\EGVU_mig_lat_survival_model.jags",
+                                     "C:\\specify_directory_here\\EGVU_mig_lat_survival_model.jags",
                                      n.chains = nc, n.thin = nt, n.burnin = nb, n.cores=nc, parallel=T, n.iter = ni)
 
 
@@ -392,7 +392,7 @@ MCMCpred %>% group_by(age,mig, lat) %>%
   mutate(surv=plogis(med.surv),lcl=plogis(lcl.surv),ucl=plogis(ucl.surv)) %>%
   
   ### ANNOTATE GROUPS
-  mutate(Season=ifelse(lat==1,"south of 25°N",ifelse(mig==1,"migration","north of 25°N"))) %>%
+  mutate(Season=ifelse(lat==1,"south of 25Â°N",ifelse(mig==1,"migration","north of 25Â°N"))) %>%
   ggplot()+
   geom_ribbon(aes(x=age, ymin=lcl, ymax=ucl, fill=Season), alpha=0.2) +   ##, type=Origin
   geom_line(aes(x=age, y=surv, color=Season),size=2)+     ## , linetype=Origin
